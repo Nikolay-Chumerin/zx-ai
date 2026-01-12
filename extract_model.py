@@ -84,26 +84,18 @@ def guess_architecture(data: bytes, charset_size: int = 64) -> list:
     Look for sequences of bytes that match expected weight data sizes.
     For a layer of size M×N, we need ceil(M*N/4) bytes of packed weights.
     """
-    # Common architectures for this size output
-    common_archs = [
-        [256, 192, 128, 64],  # Full size
-        [256, 128, 64],        # Medium
-        [256, 96, 64],         # Compact
-        [256, 64],             # Minimal
-    ]
-
     # Try to detect based on data size
     # Rough heuristic: larger files = more layers/neurons
     data_size = len(data)
 
     if data_size > 45000:
-        return [256, 192, 128, 64]
+        return [256, 192, 128, charset_size]
     elif data_size > 35000:
-        return [256, 128, 64]
+        return [256, 128, charset_size]
     elif data_size > 25000:
-        return [256, 96, 64]
+        return [256, 96, charset_size]
     else:
-        return [256, 64]
+        return [256, charset_size]
 
 
 def extract_model_from_com(com_file: str, output_file: str = 'extracted_model.pt',
@@ -260,6 +252,9 @@ def extract_model_from_com(com_file: str, output_file: str = 'extracted_model.pt
             layer_name = f'layer{layer_idx}'
             state_dict[key] = torch.from_numpy(params[f'{layer_name}_bias'].astype(np.float32))
             layer_idx += 1
+        elif 'max_accum_seen' in key:
+            # Initialize overflow tracking buffer to 0
+            state_dict[key] = torch.tensor(0.0)
 
     model.load_state_dict(state_dict)
 
