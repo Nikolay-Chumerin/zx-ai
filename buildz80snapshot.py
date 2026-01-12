@@ -23,6 +23,84 @@ def create_z80_snapshot(code: bytes, start_addr: int = 0x8000, output_file: str 
     # Initialize 48K RAM (all zeros)
     ram = bytearray(49152)  # 0x4000 to 0xFFFF (48K)
 
+    # Initialize ZX Spectrum system variables (0x5C00-0x5CFF)
+    # These are required for ROM routines to work
+    sysvar_offset = 0x5C00 - 0x4000
+
+    # KSTATE - keyboard state (8 bytes at 0x5C00)
+    # ERR_NR - error number (0x5C3A) - set to 0xFF (no error)
+    ram[sysvar_offset + 0x3A] = 0xFF
+
+    # FLAGS - system flags (0x5C3B)
+    ram[sysvar_offset + 0x3B] = 0x40  # Bit 6 = printer in use
+
+    # TV_FLAG - TV flags (0x5C3C)
+    ram[sysvar_offset + 0x3C] = 0x00
+
+    # COORDS - last plot coordinates (0x5C7D-0x5C7E)
+    ram[sysvar_offset + 0x7D] = 0x00
+    ram[sysvar_offset + 0x7E] = 0x00
+
+    # P_POSN - current print position (0x5C7F)
+    ram[sysvar_offset + 0x7F] = 0x21  # Column 33
+
+    # S_POSN - cursor position (0x5C88-0x5C89)
+    ram[sysvar_offset + 0x88] = 0x00  # Row 0
+    ram[sysvar_offset + 0x89] = 0x21  # Column 33
+
+    # ATTR_P - permanent attributes (0x5C8D)
+    ram[sysvar_offset + 0x8D] = 0x38  # White on black
+
+    # ATTR_T - temporary attributes (0x5C8F)
+    ram[sysvar_offset + 0x8F] = 0x38
+
+    # BORDCR - border color (0x5C48)
+    ram[sysvar_offset + 0x48] = 0x38  # White border
+
+    # PROG - start of BASIC program (0x5C53-0x5C54) - point to after system vars
+    ram[sysvar_offset + 0x53] = 0x00
+    ram[sysvar_offset + 0x54] = 0x5D  # 0x5D00
+
+    # VARS - start of variables (0x5C4B-0x5C4C)
+    ram[sysvar_offset + 0x4B] = 0x00
+    ram[sysvar_offset + 0x4C] = 0x5D  # 0x5D00
+
+    # E_LINE - start of edit line (0x5C59-0x5C5A)
+    ram[sysvar_offset + 0x59] = 0x00
+    ram[sysvar_offset + 0x5A] = 0x5E  # 0x5E00
+
+    # CHANS - channel information (0x5C4F-0x5C50)
+    # Point to a minimal channel data area
+    ram[sysvar_offset + 0x4F] = 0x00
+    ram[sysvar_offset + 0x50] = 0x5C  # 0x5C00 + 0x100 = 0x5D00
+
+    # Set up minimal channel data at 0x5D00
+    chan_offset = 0x5D00 - 0x4000
+    # Channel 'K' (keyboard)
+    ram[chan_offset] = 0x4B  # 'K'
+    ram[chan_offset + 1] = 0x00
+    ram[chan_offset + 2] = 0x00
+    # Channel 'S' (screen)
+    ram[chan_offset + 3] = 0x53  # 'S'
+    ram[chan_offset + 4] = 0x00
+    ram[chan_offset + 5] = 0x00
+    # Channel 'R' (work space)
+    ram[chan_offset + 6] = 0x52  # 'R'
+    ram[chan_offset + 7] = 0x00
+    ram[chan_offset + 8] = 0x00
+    ram[chan_offset + 9] = 0x80  # End marker
+
+    # CURCHL - current channel (0x5C51-0x5C52)
+    ram[sysvar_offset + 0x51] = 0x03  # Offset to channel 'S'
+    ram[sysvar_offset + 0x52] = 0x5D  # 0x5D03
+
+    # Clear screen memory (0x4000-0x57FF)
+    # Screen pixels: 0x4000-0x5AFF (6144 bytes)
+    # Attributes: 0x5800-0x5AFF (768 bytes)
+    # Set attributes to white on black (0x38)
+    for i in range(0x5800 - 0x4000, 0x5B00 - 0x4000):
+        ram[i] = 0x38
+
     # Copy code into RAM at the correct offset
     offset = start_addr - 0x4000
     ram[offset:offset + len(code)] = code
@@ -65,13 +143,13 @@ def create_z80_snapshot(code: bytes, start_addr: int = 0x8000, output_file: str 
     header[21] = 0x00   # A' register
     header[22] = 0x00   # F' register
 
-    header[23] = 0x00   # IY low
-    header[24] = 0x5C   # IY high (0x5C3A = ERR_NR system variable)
+    header[23] = 0x3A   # IY low (IY = 0x5C3A = ERR_NR system variable)
+    header[24] = 0x5C   # IY high
     header[25] = 0x00   # IX low
     header[26] = 0x00   # IX high
 
-    header[27] = 0x00   # Interrupt enable (0=DI, otherwise EI)
-    header[28] = 0x00   # IFF2 (used for interrupt mode)
+    header[27] = 0x01   # Interrupt enable (0=DI, non-zero=EI)
+    header[28] = 0x01   # IFF2 (copy of IFF1)
 
     # Bits 0-1: interrupt mode (0, 1, or 2)
     # Bit 2: 1=issue 2 emulation
@@ -89,9 +167,14 @@ def create_z80_snapshot(code: bytes, start_addr: int = 0x8000, output_file: str 
     print(f"Code loaded at: 0x{start_addr:04X}")
     print(f"Code size: {len(code)} bytes")
     print(f"Total file size: {len(header) + len(ram)} bytes")
+    print(f"\nSystem initialized:")
+    print(f"  - ZX Spectrum system variables set up")
+    print(f"  - Screen cleared (white on black)")
+    print(f"  - Channels configured")
+    print(f"  - IY register → 0x5C3A (ERR_NR)")
     print(f"\nTo run in emulator:")
     print(f"  fuse {output_file}")
-    print(f"Or just load it - it will start automatically at 0x{start_addr:04X}")
+    print(f"Program will start automatically at 0x{start_addr:04X}")
 
 
 def extract_code_from_tap(tap_file: str) -> bytes:
