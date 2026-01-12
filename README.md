@@ -10,6 +10,34 @@ It won't pass the Turing test, but it might make you smile at the green screen.
 
 For insight on how to best train your own model, see [TRAINING.md](TRAINING.md).
 
+## Setup
+
+### Using uv (Recommended)
+
+```bash
+# Create virtual environment and install dependencies
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install torch numpy anthropic
+
+# Or install from pyproject.toml
+uv pip install -e .
+```
+
+### Using pip
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install torch numpy anthropic
+```
+
+### Dependencies
+
+- **PyTorch** - For model training and quantization
+- **NumPy** - For numerical operations
+- **anthropic** (optional) - For generating training data with Claude API
+
 ## Examples
 
 Two pre-built examples are included:

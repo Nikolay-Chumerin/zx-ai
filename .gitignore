@@ -7,3 +7,8 @@ cpm
 *.com
 packages/
 training-data.txt
+.venv/
+*.TAP
+*.tap
+*.z80
+*.Z80

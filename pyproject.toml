@@ -1,0 +1,29 @@
+[project]
+name = "zx-ai"
+version = "0.1.0"
+description = "Z80 Micro Language Models - Neural networks that run on CP/M and ZX Spectrum"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT OR Apache-2.0"}
+authors = [
+    {name = "Nikolay Chumerin"}
+]
+
+dependencies = [
+    "torch>=2.0.0",
+    "numpy>=1.21.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "anthropic>=0.40.0",  # For generating training data with Claude API
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "anthropic>=0.40.0",
+]
