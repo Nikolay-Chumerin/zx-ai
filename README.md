@@ -56,6 +56,42 @@ Includes tools for generating training data with LLMs (Ollama or Claude API) and
 - **No floating point**: Everything is integer math with fixed-point scaling
 - **Interactive chat mode**: Just run `CHAT` with no arguments
 
+## Platform Support
+
+Z80-μLM runs on multiple Z80-based platforms:
+
+- **CP/M**: Original target platform. Generates `.COM` files using `buildz80com.py`
+- **ZX Spectrum 48K**: Full support via `buildz80tap.py`. See [ZX-SPECTRUM.md](ZX-SPECTRUM.md) for details
+  - Generates `.TAP` files for emulators or real hardware
+  - Uses ZX Spectrum ROM routines for I/O
+  - Memory optimized for 48K systems
+  - Compatible with most ZX Spectrum emulators
+
+For ZX Spectrum builds, use `run-zx.sh` in example directories or see the [ZX Spectrum guide](ZX-SPECTRUM.md).
+
+## Model Extraction
+
+You can extract trained models from prebuilt `.COM` files and rebuild them for different platforms:
+
+```bash
+# Analyze a COM file
+./extract_model_simple.py GUESS.COM
+
+# Extract to PyTorch format (requires PyTorch)
+./extract_model.py GUESS.COM --output model.pt
+
+# Rebuild for different platform
+./buildz80tap.py -m model.pt -o GUESS.TAP  # Now for ZX Spectrum!
+```
+
+This enables:
+- Converting CP/M programs to ZX Spectrum (and vice versa)
+- Analyzing prebuilt models without source
+- Archiving trained models separately from binaries
+- Porting to other Z80 platforms
+
+See [EXTRACTING.md](EXTRACTING.md) for detailed documentation.
+
 ## Interaction Style
 
 The model doesn't understand you. But somehow, it *gets* you.
