@@ -69,6 +69,29 @@ Z80-μLM runs on multiple Z80-based platforms:
 
 For ZX Spectrum builds, use `run-zx.sh` in example directories or see the [ZX Spectrum guide](ZX-SPECTRUM.md).
 
+## Model Extraction
+
+You can extract trained models from prebuilt `.COM` files and rebuild them for different platforms:
+
+```bash
+# Analyze a COM file
+./extract_model_simple.py GUESS.COM
+
+# Extract to PyTorch format (requires PyTorch)
+./extract_model.py GUESS.COM --output model.pt
+
+# Rebuild for different platform
+./buildz80tap.py -m model.pt -o GUESS.TAP  # Now for ZX Spectrum!
+```
+
+This enables:
+- Converting CP/M programs to ZX Spectrum (and vice versa)
+- Analyzing prebuilt models without source
+- Archiving trained models separately from binaries
+- Porting to other Z80 platforms
+
+See [EXTRACTING.md](EXTRACTING.md) for detailed documentation.
+
 ## Interaction Style
 
 The model doesn't understand you. But somehow, it *gets* you.
